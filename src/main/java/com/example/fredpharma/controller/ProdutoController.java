@@ -4,12 +4,11 @@ import com.example.fredpharma.model.Produto;
 import com.example.fredpharma.repository.CategoriaRepositoy;
 import com.example.fredpharma.repository.ProdutoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -27,4 +26,39 @@ public class ProdutoController {
     public ResponseEntity<List<Produto>> getAll(){
         return ResponseEntity.ok(produtoRepository.findAll());
     }
+
+    @PostMapping
+    public ResponseEntity<Produto> postProduto(@Valid @RequestBody Produto produto){
+        if (categoriaRepositoy.existsById(produto.getCategoria().getId()))
+            return ResponseEntity.status(HttpStatus.CREATED).body(produtoRepository.save(produto));
+
+        return ResponseEntity.badRequest().build();
+    }
+
+    @PutMapping
+    public ResponseEntity<Produto> putProduto(@Valid @RequestBody Produto produto){
+
+        if (produtoRepository.existsById(produto.getId())){
+
+            if (categoriaRepositoy.existsById(produto.getCategoria().getId()))
+                return ResponseEntity.ok(produtoRepository.save(produto));
+            else
+                return ResponseEntity.badRequest().build();
+
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteProduto(@PathVariable Long id){
+
+        return produtoRepository.findById(id)
+                .map(resposta ->{
+                    produtoRepository.deleteById(id);
+                    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
 }
